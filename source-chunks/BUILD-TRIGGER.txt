@@ -1,1 +1,1 @@
-Trigger build with runner-provided Gradle.
+Trigger rebuild after SDK PATH verification fix.
