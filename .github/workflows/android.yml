@@ -24,17 +24,19 @@ jobs:
 
       - name: Verify source archive
         run: |
-          test -f nebula-android.zip || {
-            echo "::error::Upload nebula-android.zip to the repository root. It must be the flattened project archive containing settings.gradle.kts and app/build.gradle.kts."
+          test -f nebula-android-source.tar.xz || {
+            echo "::error::nebula-android-source.tar.xz is missing from the repository root."
             exit 1
           }
 
       - name: Extract Android project
         run: |
           mkdir -p source
-          unzip -q nebula-android.zip -d source
+          tar -xJf nebula-android-source.tar.xz -C source
           test -f source/settings.gradle.kts
+          test -f source/build.gradle.kts
           test -f source/app/build.gradle.kts
+          echo "Project source extracted successfully."
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -89,4 +91,4 @@ jobs:
 
       - name: Report test status
         if: steps.tests.outcome == 'failure'
-        run: echo "::warning::Unit tests failed. The debug APK artifact was already uploaded."
+        run: echo "::warning::Unit tests failed. The APK artifact was already uploaded."
