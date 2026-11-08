@@ -65,6 +65,9 @@ jobs:
 
       - name: Verify toolchain
         run: |
+          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
           java -version
           gradle --version
           sdkmanager --list_installed
