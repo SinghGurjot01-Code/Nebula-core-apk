@@ -1,1 +1,1 @@
-Trigger rebuild after Gradle distribution retry fix.
+Trigger build with runner-provided Gradle.
