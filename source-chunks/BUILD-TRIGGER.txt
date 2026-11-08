@@ -1,1 +1,1 @@
-Trigger rebuild after Android SDK license shell fix.
+Trigger rebuild after Gradle distribution retry fix.
