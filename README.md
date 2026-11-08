@@ -1,24 +1,26 @@
 # Nebula Android
 
-Native Android customer app for the Nebula cloud-gaming platform.
+Native Android customer app for Nebula.
 
-## Build
+## Build and APK
 
-The GitHub Actions workflow builds the Android project directly from the repository root.
+The GitHub Actions workflow builds the project from the flattened source ZIP in the repository root.
 
-1. Download the project ZIP from the project release shared with the maintainer.
-2. Extract the ZIP contents into the repository root. The root must contain `settings.gradle.kts`, `build.gradle.kts`, and `app/build.gradle.kts`.
-3. Commit and push the extracted files.
-4. Open **Actions → Nebula Android APK**. The APK is uploaded as the `nebula-v0.0.3-debug-apk` artifact.
+1. Upload the supplied **nebula-android.zip** to the repository root.
+2. Open **Actions → Nebula Android APK**.
+3. Download the **nebula-debug-apk** artifact from a successful build.
 
-Do not upload the ZIP as a nested archive. The workflow expects the Android source tree at repository root.
+The archive must contain these paths at its root:
+- `settings.gradle.kts`
+- `build.gradle.kts`
+- `app/build.gradle.kts`
+
+The workflow extracts the archive to `source/`, installs JDK 17, Android SDK 35 and Gradle 8.9, compiles Kotlin, builds the debug APK, then runs unit tests and uploads their report separately.
 
 ## Current scope
 
-- Kotlin + Jetpack Compose
-- Light theme
+- Kotlin + Jetpack Compose, light theme
 - Local demo authentication, games, bookings, tickets and profile
 - No wallet or admin dashboard
-- Supabase authentication and live Moonlight streaming are future integrations, not active in this frontend-only build.
-
-The workflow installs JDK 17, Android SDK 35 and Gradle 8.9 on GitHub-hosted runners. It does not require a checked-in Gradle wrapper.
+- Supabase authentication/data and real Moonlight streaming are planned integrations, not active in this frontend-first build
+- No real booking or cloud-gaming session is created by demo mode
