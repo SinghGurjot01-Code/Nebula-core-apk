@@ -4,78 +4,89 @@ on:
   push:
     branches: [main, master]
     paths:
-      - 'nebula-android.zip'
+      - '**.kt'
+      - '**.kts'
+      - '**.xml'
+      - 'gradle/**'
       - '.github/workflows/android.yml'
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: nebula-apk-${{ github.ref }}
+  group: nebula-android-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
+    name: Build and test Android app
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out source
+        uses: actions/checkout@v4
 
-      - name: Confirm source archive exists
-        run: test -f nebula-android.zip
-
-      - name: Extract Android project
+      - name: Verify Android project is in repository root
         run: |
-          mkdir -p build-source
-          unzip -q nebula-android.zip -d build-source
-          test -f build-source/nebula-android/app/build.gradle.kts
+          if [ ! -f settings.gradle.kts ] || [ ! -f app/build.gradle.kts ]; then
+            echo "::error::Android project files are missing from repository root. Extract the contents of nebula-android-v0.0.2-fixed.zip into the repository root and commit them. Do not upload the ZIP as a nested archive."
+            exit 1
+          fi
 
-      - uses: actions/setup-java@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
 
-      - uses: android-actions/setup-android@v3
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Install Android SDK
+      - name: Install Android SDK components
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
-      - uses: gradle/actions/setup-gradle@v4
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
+      - name: Verify toolchain
+        run: |
+          java -version
+          gradle --version
+          sdkmanager --list_installed
+
       - name: Compile Kotlin
-        working-directory: build-source/nebula-android
         run: gradle --no-daemon --stacktrace :app:compileDebugKotlin
 
       - name: Build debug APK
-        working-directory: build-source/nebula-android
         run: gradle --no-daemon --stacktrace :app:assembleDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-v0.0.2-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Run unit tests
         id: tests
         continue-on-error: true
-        working-directory: build-source/nebula-android
         run: gradle --no-daemon --stacktrace :app:testDebugUnitTest
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: nebula-v0.0.2-debug-apk
-          path: build-source/nebula-android/app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Upload test reports
+      - name: Upload unit test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nebula-unit-test-reports
-          path: build-source/nebula-android/app/build/reports/tests/testDebugUnitTest/
+          path: app/build/reports/tests/testDebugUnitTest/
           if-no-files-found: ignore
           retention-days: 14
 
       - name: Report test status
         if: steps.tests.outcome == 'failure'
-        run: echo "::warning::APK built, but unit tests failed. Inspect the test report artifact."
+        run: echo "::warning::The APK was built, but one or more unit tests failed. Review the uploaded test report."
